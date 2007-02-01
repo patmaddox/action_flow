@@ -15,7 +15,10 @@ module ActionFlow
     end
   
     def execute(resource, controller)
+      session = controller.session
       @steps.each do |s|
+        (class << s; self; end).send(:define_method, :session, lambda { session})
+        
         unless s.passes?(resource)
           s.execute_on controller
           return true

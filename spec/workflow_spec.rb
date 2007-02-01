@@ -26,6 +26,26 @@ context "A workflow with 0 steps" do
   end
 end
 
+context "When executed, a workflow with one step" do
+  include WorkflowSpecHelpers
+  
+  setup do
+    @step = PassStep.new
+    workflow.step @step
+  end
+
+  specify "should get the controller's session" do
+    mock_controller.should_receive(:session).and_return "session"
+    execute_workflow
+  end
+  
+  specify "should define a session method for the step" do
+    @step.should_not_respond_to(:session)
+    execute_workflow
+    @step.session.should == "session"
+  end
+end
+
 context "A workflow with 1 step that passes" do
   include WorkflowSpecHelpers
   
