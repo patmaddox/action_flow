@@ -9,7 +9,7 @@ module WorkflowSpecHelpers
   end
 
   def mock_controller
-    @mock_controller ||= (m = mock("controller"); m.stub!(:session).and_return("session"); m)
+    @mock_controller ||= Object.new
   end
 
   def workflow
@@ -17,6 +17,6 @@ module WorkflowSpecHelpers
   end
 
   def execute_workflow
-    workflow.execute mock_resource, mock_controller
+    workflow.execute mock_controller
   end
 end

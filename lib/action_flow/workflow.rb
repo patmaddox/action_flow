@@ -6,21 +6,20 @@ module ActionFlow
     end
   
     def step(new_step, &action)
-      if new_step.respond_to?(:passes?) && new_step.respond_to?(:execute_on)
+      if new_step.is_a?(Module) && new_step.instance_methods.include?("passes?") && 
+          new_step.instance_methods.include?("execute_step")
         @steps << new_step
       else
-        step = "#{new_step}_step".classify.constantize.new &action
+        step = "#{new_step}_step".classify.constantize
         @steps << step
       end
     end
   
-    def execute(resource, controller)
-      session = controller.session
+    def execute(controller)
       @steps.each do |s|
-        (class << s; self; end).send(:define_method, :session, lambda { session})
-        
-        unless s.passes?(resource)
-          s.execute_on controller
+        controller.extend s
+        unless controller.passes?
+          controller.execute_step
           return true
         end
       end

@@ -1,20 +1,20 @@
 require File.dirname(__FILE__) + '/spec_helper'
 
-class PassStep
-  def passes?(r)
+module PassStep
+  def passes?
     true
   end
   
-  def execute_on(c)
+  def execute_step
   end
 end
 
-class FailStep
-  def passes?(r)
+module FailStep
+  def passes?
     false
   end
   
-  def execute_on(c)
+  def execute_step
   end
 end
 
@@ -26,41 +26,22 @@ context "A workflow with 0 steps" do
   end
 end
 
-context "When executed, a workflow with one step" do
-  include WorkflowSpecHelpers
-  
-  setup do
-    @step = PassStep.new
-    workflow.step @step
-  end
-
-  specify "should get the controller's session" do
-    mock_controller.should_receive(:session).and_return "session"
-    execute_workflow
-  end
-  
-  specify "should define a session method for the step" do
-    @step.should_not_respond_to(:session)
-    execute_workflow
-    @step.session.should == "session"
-  end
-end
-
 context "A workflow with 1 step that passes" do
   include WorkflowSpecHelpers
   
   setup do
-    @pass_step = PassStep.new
+    @pass_step = PassStep
     workflow.step @pass_step
   end
   
-  specify "should check to see that the first step passes" do
-    @pass_step.should_receive(:passes?).with(mock_resource).and_return true
-    execute_workflow
-  end
+  # Somehow I need to show that it extended it
+  #specify "should extend the controller with the step" do
+  #  mock_controller.should_receive(:extend).with(@pass_step)
+  #  execute_workflow
+  #end
 
   specify "should not execute the step" do
-    @pass_step.should_not_receive(:execute_on)
+    mock_controller.should_not_receive(:execute_step)
     execute_workflow
   end
   
@@ -73,12 +54,12 @@ context "A workflow with 1 step that fails" do
   include WorkflowSpecHelpers
   
   setup do
-    @fail_step = FailStep.new
+    @fail_step = FailStep
     workflow.step @fail_step
   end
 
   specify "should execute the step on the controller" do
-    @fail_step.should_receive(:execute_on).with(mock_controller)
+    mock_controller.should_receive(:execute_step)
     execute_workflow
   end
   
@@ -91,29 +72,20 @@ context "A workflow with 1 step that passes and 1 step that fails" do
   include WorkflowSpecHelpers
   
   setup do
-    @pass_step = PassStep.new
+    @pass_step = PassStep
     workflow.step @pass_step
-    @fail_step = FailStep.new
+    @fail_step = FailStep
     workflow.step @fail_step
   end
-
+  
   specify "should check to see if the first step passes" do
-    @pass_step.should_receive(:passes?).and_return true
+    mock_controller.should_receive(:passes?).twice.and_return true, false
     execute_workflow
   end
   
-  specify "should not execute the pass step" do
-    @pass_step.should_not_receive(:execute_on)
-    execute_workflow
-  end
-  
-  specify "should check to see if the second step passes" do
-    @fail_step.should_receive(:passes?).and_return false
-    execute_workflow
-  end
-  
-  specify "should execute the fail step" do
-    @fail_step.should_receive(:execute_on)
+  # Somehow I have to specify that it's the fail step that executes
+  specify "should execute the step" do
+    mock_controller.should_receive(:execute_step)
     execute_workflow
   end
 end
@@ -122,73 +94,34 @@ context "A workflow with two fail steps" do
   include WorkflowSpecHelpers
   
   setup do
-    @fail1 = FailStep.new
+    @fail1 = FailStep
     workflow.step @fail1
-    @fail2 = FailStep.new
+    @fail2 = FailStep
     workflow.step @fail2
   end
 
-  specify "should check to see if the first step passes" do
-    @fail1.should_receive(:passes?).and_return false
+  specify "should check to see if the first step passes but not the second step" do
+    mock_controller.should_receive(:passes?).once.and_return false
     execute_workflow
-  end
-  
-  specify "should execute the first fail step" do
-    @fail1.should_receive(:execute_on)
-    execute_workflow
-  end
-  
-  specify "should not check to see if the second step passes" do
-    @fail2.should_not_receive(:passes?)
-    execute_workflow
-  end
-  
-  specify "should not execute the second fail step" do
-    @fail2.should_not_receive(:execute_on)
-    execute_workflow
-  end
-end
-
-context "When #step is called with a symbol and block instead of a step object, a workflow" do
-  include WorkflowSpecHelpers
-  
-  setup do
-    @fake_step = mock("step")
-    FakeStep = Class.new
-    FakeStep.stub!(:new).and_return @fake_step
-    @action = lambda {}
-  end
-  
-  def add_step
-    workflow.step :fake, &@action
-  end
-  
-  specify "should infer the step class and create a new step" do
-    FakeStep.should_receive(:new).with(&@action).and_return @fake_step
-    add_step
   end
 end
 
 context "When initialized with an array of symbols, a workflow" do
   include WorkflowSpecHelpers
-  setup do
-    @mock_pass = mock("pass step")
-    PassStep.stub!(:new).and_return @mock_pass
-    @mock_fail = mock("fail step")
-    FailStep.stub!(:new).and_return @mock_fail
-  end
 
   def create_workflow
     @workflow = ActionFlow::Workflow.new :pass, :fail
+    @workflow.execute mock_controller
   end
   
-  specify "should create the first step" do
-    PassStep.should_receive(:new).and_return @mock_pass
+  specify "should check to see if the first step passes" do
+    mock_controller.should_receive(:passes?).twice.and_return true, false
     create_workflow
   end
   
-  specify "should create the second step" do
-    FailStep.should_receive(:new).and_return @mock_fail
+  # Somehow I have to specify that it's the fail step that executes
+  specify "should execute the step" do
+    mock_controller.should_receive(:execute_step)
     create_workflow
   end
 end
