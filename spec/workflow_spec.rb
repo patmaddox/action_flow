@@ -5,7 +5,7 @@ module PassStep
     true
   end
   
-  def execute_step
+  def execute
   end
 end
 
@@ -14,7 +14,7 @@ module FailStep
     false
   end
   
-  def execute_step
+  def execute
   end
 end
 
@@ -41,7 +41,7 @@ context "A workflow with 1 step that passes" do
   #end
 
   specify "should not execute the step" do
-    mock_controller.should_not_receive(:execute_step)
+    mock_controller.should_not_receive(:execute)
     execute_workflow
   end
   
@@ -59,7 +59,7 @@ context "A workflow with 1 step that fails" do
   end
 
   specify "should execute the step on the controller" do
-    mock_controller.should_receive(:execute_step)
+    mock_controller.should_receive(:execute)
     execute_workflow
   end
   
@@ -85,7 +85,7 @@ context "A workflow with 1 step that passes and 1 step that fails" do
   
   # Somehow I have to specify that it's the fail step that executes
   specify "should execute the step" do
-    mock_controller.should_receive(:execute_step)
+    mock_controller.should_receive(:execute)
     execute_workflow
   end
 end
@@ -121,7 +121,7 @@ context "When initialized with an array of symbols, a workflow" do
   
   # Somehow I have to specify that it's the fail step that executes
   specify "should execute the step" do
-    mock_controller.should_receive(:execute_step)
+    mock_controller.should_receive(:execute)
     create_workflow
   end
 end

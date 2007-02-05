@@ -7,7 +7,7 @@ module ActionFlow
   
     def step(new_step, &action)
       if new_step.is_a?(Module) && new_step.instance_methods.include?("passes?") && 
-          new_step.instance_methods.include?("execute_step")
+          new_step.instance_methods.include?("execute")
         @steps << new_step
       else
         step = "#{new_step}_step".classify.constantize
@@ -19,7 +19,7 @@ module ActionFlow
       @steps.each do |s|
         controller.extend s
         unless controller.passes?
-          controller.execute_step
+          controller.execute
           return true
         end
       end
