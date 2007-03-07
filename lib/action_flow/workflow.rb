@@ -16,8 +16,9 @@ module ActionFlow
     end
   
     def execute(controller)
-      @steps.each do |s|
+      @steps.each_with_index do |s, i|
         controller.extend s
+        controller.max_step_reached = i + 1
         unless controller.passes?
           controller.execute
           return true
